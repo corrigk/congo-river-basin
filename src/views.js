@@ -1,4 +1,4 @@
-import { STAGES, ZONES, ASSET_INFO, STAKE, ZONE_GEO, OODA } from './content.js';
+import { STAGES, ZONES, ASSET_INFO, STAKE, ZONE_GEO, OODA, STAGE_FLOW, FLOW_MODE_LABEL } from './content.js';
 import { ASSET_ICON, ICON } from './icons.js';
 
 export const pad = n => String(n).padStart(2, '0');
@@ -10,6 +10,15 @@ export const zoneBy = Object.fromEntries(ZONES.map(z => [z.k, z]));
 export const zoneIndex = k => ZONES.findIndex(z => z.k === k);
 export const zonesForStage = k => ZONES.filter(z => z.stages.includes(k));
 export const zonesForAsset = k => ZONES.filter(z => z.assets.includes(k));
+
+// Consecutive runs of stages that share a data-flow mode, e.g. { mode: 'in', first: stage 1, last: stage 4 }.
+const FLOW_RANGES = STAGES.reduce((runs, s) => {
+  const last = runs.at(-1);
+  if (last && last.mode === STAGE_FLOW[s.k]) last.last = s;
+  else runs.push({ mode: STAGE_FLOW[s.k], first: s, last: s });
+  return runs;
+}, []);
+const rangeLabel = r => (r.first === r.last ? `${r.first.n}` : `${r.first.n}–${r.last.n}`);
 
 const PHASE_SPANS = OODA.map(p => ({ p, from: STAGES.findIndex(s => s.ooda === p), n: STAGES.filter(s => s.ooda === p).length }));
 
@@ -231,7 +240,7 @@ export function hubPanel(nIn, nOut) {
     <div class="p-stats">
       <div><b class="c-in">${nIn}</b><span>inbound feeds</span></div>
       <div><b class="c-out">${nOut}</b><span>outbound links</span></div>
-      <div><b>9</b><span>stages served</span></div>
+      <div><b>${STAGES.length}</b><span>stages served</span></div>
     </div>
     <div class="p-legend">
       <div><i class="lg-line flow-in"></i>Observations in</div>
@@ -239,8 +248,7 @@ export function hubPanel(nIn, nOut) {
     </div>
     <h3 class="p-h">How it changes by stage</h3>
     <div class="p-chips">
-      ${[['observe', 'Stages 1–4: data flows in'], ['forecast', 'Stages 5–6: hub fuses, forecasts, ranks'], ['deploy', 'Stages 7–8: alerts and tasking flow out'], ['feedback', 'Stage 9: everything loops back']]
-        .map(([k, t]) => `<button class="chip chip-stage" data-stage="${k}"><b>${pad(stageBy[k].n)}</b><span>${t}</span>${ICON.arrow}</button>`).join('')}
+      ${FLOW_RANGES.map(r => `<button class="chip chip-stage" data-stage="${r.first.k}"><b>${pad(r.first.n)}</b><span>${r.first === r.last ? 'Stage' : 'Stages'} ${rangeLabel(r)}: ${FLOW_MODE_LABEL[r.mode]}</span>${ICON.arrow}</button>`).join('')}
     </div>`;
 }
 
@@ -310,7 +318,7 @@ export function legendDataflow() {
     <div class="lg-h">Data flow</div>
     <div class="lg-row"><i class="lg-line flow-in"></i>Observations → hub</div>
     <div class="lg-row"><i class="lg-line flow-out"></i>Alerts &amp; tasking → field</div>
-    <div class="lg-note">Follows the selected stage: 1–4 in · 5–6 hub · 7–8 out · 9 loop</div></div>`;
+    <div class="lg-note">Follows the selected stage: ${FLOW_RANGES.map(r => `${rangeLabel(r)} ${r.mode}`).join(' · ')}</div></div>`;
 }
 export function legendSats() {
   return `<div class="lg-card" data-card="sats"><div class="lg-h">Satellites <span class="lg-live">Live ×90</span></div><div class="sat-list compact" id="legend-sats"></div></div>`;

@@ -1,11 +1,11 @@
 import './style.css';
 import './overlays.css';
 import { Cesium as C } from './cesium.js';
-import { createGlobe, BASIN, ZONE_PROPS } from './globe.js';
-import { STAGES, ZONES, ASSET_INFO, ZONE_GEO, CITIES, RIVER_LABELS } from './content.js';
+import { createGlobe, BASIN, ZONE_PROPS, MAX_ALT } from './globe.js';
+import { STAGES, ZONES, ASSET_INFO, ASSET_ROLE, ZONE_GEO, CITIES, RIVER_LABELS, HUB, STAGE_FLOW } from './content.js';
 import { ASSET_ICON, ICON, MARK } from './icons.js';
 import { createRiverFlow } from './riverflow.js';
-import { createDataFlow, HUB, STAGE_MODE, SENDS, RECEIVES } from './dataflow.js';
+import { createDataFlow } from './dataflow.js';
 import { createOrbits } from './orbits.js';
 import { createWeather } from './weather.js';
 import { createCoverage, ACCESS } from './coverage.js';
@@ -37,7 +37,7 @@ $('#intro-stats').innerHTML = [
 // ---------- globe ----------
 await document.fonts?.ready;
 const globe = await createGlobe({ container: 'globe', creditContainer: $('#credits') });
-globe.setSpace();
+globe.introView();
 globe.spin(true);
 $('#dock').innerHTML = V.dock(globe.layers);
 
@@ -58,7 +58,7 @@ ZONES.forEach((z, i) => {
       <span class="zm-pin"><span class="zm-ring"></span><b>${V.pad(i + 1)}</b></span>
       <span class="zm-label"><span class="zm-name">${z.name}</span><span class="zm-issue">${z.issue}</span></span>
     </button>`, 'mk-zone');
-  zoneMarkers[z.k] = { d, h: globe.addMarker(d, lon, lat, 0, { maxAlt: 16_000_000 }) };
+  zoneMarkers[z.k] = { d, h: globe.addMarker(d, lon, lat, 0, { maxAlt: MAX_ALT.zone }) };
 });
 
 // Assets ring their zone's anchor; satellites sit in orbit with a sensing beam to the ground.
@@ -79,20 +79,20 @@ ZONES.forEach(z => {
     }
     const d = el(`<button class="am" data-asset="${a}" data-zone="${z.k}" aria-label="${ASSET_INFO[a].name}">
         <span class="am-ico">${ASSET_ICON[a]}</span><span class="am-label">${ASSET_INFO[a].name}</span></button>`, `mk-asset${a === 'satellite' ? ' is-orbit' : ''}`);
-    const m = globe.addMarker(d, mlon, mlat, h, { maxAlt: 9_000_000 });
+    const m = globe.addMarker(d, mlon, mlat, h, { maxAlt: MAX_ALT.asset });
     m.on = false;
     assetMarkers.push({ z: z.k, a, m, beam, d, lon: mlon, lat: mlat, h });
   });
 });
 
 const labelMarkers = [
-  ...CITIES.map(c => globe.addMarker(el(`<span class="cm-dot"></span><span class="cm-name">${c.name}</span>`, `mk-city side-${c.side || 'r'}`), c.lon, c.lat, 0, { maxAlt: 3_700_000 })),
-  ...RIVER_LABELS.map(r => globe.addMarker(el(`<span>${r.name}</span>`, 'mk-river'), r.lon, r.lat, 0, { maxAlt: 3_700_000 })),
+  ...CITIES.map(c => globe.addMarker(el(`<span class="cm-dot"></span><span class="cm-name">${c.name}</span>`, `mk-city side-${c.side || 'r'}`), ...c.at, 0, { maxAlt: MAX_ALT.label })),
+  ...RIVER_LABELS.map(r => globe.addMarker(el(`<span>${r.name}</span>`, 'mk-river'), r.lon, r.lat, 0, { maxAlt: MAX_ALT.label })),
 ];
 
-const hubEl = el(`<button class="hb" data-hub="1" aria-label="Basin Data Hub"><span class="hb-hex"><i></i></span>
-  <span class="hb-label"><b>Basin Data Hub</b><em>CICOS · Kinshasa · concept</em></span></button>`, 'mk-hub');
-const hubMk = globe.addMarker(hubEl, HUB.lon, HUB.lat, 0, { maxAlt: 16_000_000 });
+const hubEl = el(`<button class="hb" data-hub="1" aria-label="${HUB.name} (concept)"><span class="hb-hex"><i></i></span>
+  <span class="hb-label"><b>${HUB.name}</b><em>${HUB.host} · concept</em></span></button>`, 'mk-hub');
+const hubMk = globe.addMarker(hubEl, ...HUB.at, 0, { maxAlt: MAX_ALT.hub });
 hubMk.on = false;
 
 // ---------- overlay modules ----------
@@ -112,7 +112,7 @@ function syncDataflow() {
   hubMk.on = on || scenario.active;
   if (scenario.active) return;
   const sel = state.sel;
-  const mode = sel?.type === 'stage' ? STAGE_MODE[sel.k] : 'all';
+  const mode = sel?.type === 'stage' ? STAGE_FLOW[sel.k] : 'all';
   dataflow.update({ on, mode, zone: sel?.type === 'zone' ? sel.k : null });
   hubEl.classList.toggle('is-busy', on && (mode === 'hub' || mode === 'loop'));
 }
@@ -188,7 +188,7 @@ function renderPanel() {
   else if (sel?.type === 'zone') html = V.zonePanel(sel.k, ZONE_PROPS, BASIN);
   else if (sel?.type === 'stage') html = V.stagePanel(sel.k);
   else if (sel?.type === 'asset') html = V.assetPanel(sel.k);
-  else if (sel?.type === 'hub') html = V.hubPanel(assetMarkers.filter(a => SENDS.has(a.a)).length, assetMarkers.filter(a => RECEIVES.has(a.a)).length);
+  else if (sel?.type === 'hub') html = V.hubPanel(assetMarkers.filter(a => ASSET_ROLE[a.a].sends).length, assetMarkers.filter(a => ASSET_ROLE[a.a].receives).length);
   else if (sel?.type === 'space') html = V.spacePanel(tle.fetched);
   else if (sel?.type === 'beat') html = V.beatPanel(sel.k, SCENARIO);
   if (html) {
@@ -328,10 +328,7 @@ function showIntro() {
   app.classList.add('is-intro');
   state.started = false;
   globe.setOverlays(false);
-  globe.camera.flyTo({
-    destination: C.Cartesian3.fromDegrees(-4, 5, 21_000_000), duration: 2.4,
-    complete: () => app.classList.contains('is-intro') && globe.spin(true),
-  });
+  globe.introView({ animate: true, complete: () => app.classList.contains('is-intro') && globe.spin(true) });
 }
 
 // ---------- presenter tour ----------
@@ -342,17 +339,18 @@ const PRESET = {
   process:  { dataflow: true, sats: false, weather: false },
   scenario: { dataflow: false, sats: false, weather: false },
 };
+// A tour step records what it shows (sel / view) so free clicks can be mapped back onto the tour.
+const globeStep = (ch, preset, sel) => ({ ch, preset, sel, run: () => { setView('globe'); select(sel); } });
 const TOUR = [
   { ch: 'Intro', run: showIntro },
-  { ch: 'The Basin', preset: 'base', run: () => { setView('globe'); select({ type: 'basin' }); } },
-  ...ZONES.map(z => ({ ch: 'Focus Zones', preset: 'base', run: () => { setView('globe'); select({ type: 'zone', k: z.k }); } })),
-  { ch: 'Space Segment', preset: 'space', run: () => { setView('globe'); select({ type: 'space' }); } },
-  ...STAGES.map(s => ({ ch: 'The Process', preset: 'process', run: () => { setView('globe'); select({ type: 'stage', k: s.k }); } })),
-  ...SCENARIO.beats.map((b, i) => ({ ch: 'Flood Scenario', preset: 'scenario', run: () => enterBeat(i) })),
-  { ch: 'Process & Gaps', run: () => { select(null, { fly: false }); setView('process'); } },
+  globeStep('The Basin', 'base', { type: 'basin' }),
+  ...ZONES.map(z => globeStep('Focus Zones', 'base', { type: 'zone', k: z.k })),
+  globeStep('Space Segment', 'space', { type: 'space' }),
+  ...STAGES.map(s => globeStep('The Process', 'process', { type: 'stage', k: s.k })),
+  ...SCENARIO.beats.map((b, i) => ({ ch: 'Flood Scenario', preset: 'scenario', sel: { type: 'beat', k: i }, run: () => enterBeat(i) })),
+  { ch: 'Process & Gaps', view: 'process', run: () => { select(null, { fly: false }); setView('process'); } },
 ];
 const CHAPTERS = [...new Set(TOUR.map(t => t.ch))];
-const TOUR_AT = { basin: 1, zone: 2, space: 2 + ZONES.length, stage: 3 + ZONES.length, beat: 3 + ZONES.length + STAGES.length };
 
 function go(i) {
   i = Math.max(0, Math.min(TOUR.length - 1, i));
@@ -384,13 +382,7 @@ function toast(n, text) {
 // Keep the tour cursor in sync when the presenter clicks around freely.
 function syncTour() {
   const { sel, view } = state;
-  let i = -1;
-  if (view === 'process' && !sel) i = TOUR.length - 1;
-  else if (sel?.type === 'basin') i = TOUR_AT.basin;
-  else if (sel?.type === 'space') i = TOUR_AT.space;
-  else if (sel?.type === 'zone') i = TOUR_AT.zone + V.zoneIndex(sel.k);
-  else if (sel?.type === 'stage') i = TOUR_AT.stage + STAGES.findIndex(s => s.k === sel.k);
-  else if (sel?.type === 'beat') i = TOUR_AT.beat + sel.k;
+  const i = TOUR.findIndex(t => (t.view && t.view === view && !sel) || (sel && t.sel?.type === sel.type && t.sel.k === sel.k));
   if (i >= 0) { state.tour = i; updateTourUI(); }
 }
 

@@ -16,6 +16,12 @@ const WHITE = C.Color.WHITE;
 // Vector heights (m) above the ellipsoid so layers sort cleanly against the globe.
 const H_MASK = 60, H_FILL = 120, H_LINE = 400;
 
+// Highest camera altitude (m) at which each kind of HTML marker is still shown.
+export const MAX_ALT = { zone: 16_000_000, hub: 16_000_000, scenario: 12_000_000, asset: 9_000_000, label: 3_700_000 };
+
+// Title-card camera: Africa seen from deep space, slightly west so the title card has room.
+const INTRO_VIEW = { lon: -4, lat: 5, height: 21_000_000 };
+
 export const BASIN = basinGeo.features[0].properties;
 export const ZONE_PROPS = Object.fromEntries(zonesGeo.features.map(f => [f.properties.zone, f.properties]));
 
@@ -260,8 +266,12 @@ export async function createGlobe({ container, creditContainer }) {
     });
   }
 
-  function setSpace() {
-    camera.setView({ destination: C.Cartesian3.fromDegrees(-4, 5, 21_000_000), orientation: { heading: 0, pitch: -Math.PI / 2, roll: 0 } });
+  // Jump (or fly) to the title-card view.
+  function introView({ animate = false, complete } = {}) {
+    const destination = C.Cartesian3.fromDegrees(INTRO_VIEW.lon, INTRO_VIEW.lat, INTRO_VIEW.height);
+    const orientation = { heading: 0, pitch: -Math.PI / 2, roll: 0 };
+    if (animate) camera.flyTo({ destination, orientation, duration: 2.4, complete });
+    else camera.setView({ destination, orientation });
   }
   let spinning = false;
   scene.preRender.addEventListener(() => { if (spinning) camera.rotate(C.Cartesian3.UNIT_Z, -0.0009); });
@@ -337,7 +347,7 @@ export async function createGlobe({ container, creditContainer }) {
 
   return {
     viewer, scene, camera, layers,
-    flyHome, flyToZone, flyIntro, flySpace, flyToBox, setSpace, spin,
+    flyHome, flyToZone, flyIntro, flySpace, flyToBox, introView, spin,
     onTick: f => ticks.add(f),
     setOverlays: on => { overlayTarget = on ? 1 : 0; },
     setZoneStates(map) { zoneState = { ...Object.fromEntries(zoneKeys.map(k => [k, 'idle'])), ...map }; zonesDirty = true; },

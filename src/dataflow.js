@@ -3,23 +3,11 @@
 import { Cesium as C } from './cesium.js';
 import { flowMaterial, arc, setAlpha } from './fx.js';
 import { token } from './theme.js';
+import { HUB, ASSET_ROLE } from './content.js';
 
-export const HUB = { lon: 15.31, lat: -4.33, name: 'Basin Data Hub' };
-
-// Which asset classes send data in, and which receive alerts / tasking.
-export const SENDS = new Set(['satellite', 'uav', 'ground', 'water', 'community']);
-export const RECEIVES = new Set(['government', 'community', 'water', 'uav']);
 
 const IN = C.Color.fromCssColorString(token('data'));
 const OUT = C.Color.fromCssColorString(token('alert'));
-
-// Stage → which directions are active.
-export const STAGE_MODE = {
-  observe: 'in', collect: 'in', integrate: 'in', assess: 'in',
-  forecast: 'hub', prioritize: 'hub',
-  deploy: 'out', support: 'out',
-  feedback: 'loop',
-};
 
 export function createDataFlow(globe) {
   const P = globe.scene.primitives;
@@ -50,9 +38,9 @@ export function createDataFlow(globe) {
   function setAssets(assets) {
     for (const a of assets) {
       const at = [a.lon, a.lat, a.h];
-      const hub = [HUB.lon, HUB.lat, 0];
-      if (SENDS.has(a.a)) makeLink(at, hub, 'in', { zone: a.z, asset: a.a, standing: true });
-      if (RECEIVES.has(a.a)) makeLink(hub, at, 'out', { zone: a.z, asset: a.a, standing: true });
+      const hub = [...HUB.at, 0];
+      if (ASSET_ROLE[a.a].sends) makeLink(at, hub, 'in', { zone: a.z, asset: a.a, standing: true });
+      if (ASSET_ROLE[a.a].receives) makeLink(hub, at, 'out', { zone: a.z, asset: a.a, standing: true });
     }
   }
 

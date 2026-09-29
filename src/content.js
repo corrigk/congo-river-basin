@@ -92,17 +92,61 @@ export const ZONE_GEO = {
 
 export const OODA = ['Sense', 'Understand', 'Predict', 'Decide', 'Respond', 'Recover', 'Learn'];
 
+// Named places [lon, lat], shared by map labels, the data hub and the flooding example.
+export const PLACES = {
+  kinshasa:    [15.322, -4.325],
+  brazzaville: [15.242, -4.263],
+  bangui:      [18.558, 4.394],
+  kisangani:   [25.191, 0.515],
+  mbandaka:    [18.260, 0.048],
+  ouesso:      [16.050, 1.610],
+  kananga:     [22.417, -5.896],
+  lubumbashi:  [27.479, -11.664],
+  matadi:      [13.450, -5.820],
+  mobaye:      [21.180, 4.320],
+  mongoumba:   [18.600, 3.640],
+  impfondo:    [18.060, 1.620],
+};
+
+// City labels on the map ('side' puts the label left or right of the dot).
 export const CITIES = [
-  { name: 'Kinshasa',    lon: 15.322, lat: -4.325, side: 'r' },
-  { name: 'Brazzaville', lon: 15.242, lat: -4.263, side: 'l' },
-  { name: 'Bangui',      lon: 18.558, lat: 4.394 },
-  { name: 'Kisangani',   lon: 25.191, lat: 0.515 },
-  { name: 'Mbandaka',    lon: 18.260, lat: 0.048 },
-  { name: 'Ouesso',      lon: 16.050, lat: 1.610 },
-  { name: 'Kananga',     lon: 22.417, lat: -5.896 },
-  { name: 'Lubumbashi',  lon: 27.479, lat: -11.664 },
-  { name: 'Matadi',      lon: 13.450, lat: -5.820 },
+  { name: 'Kinshasa',    at: PLACES.kinshasa, side: 'r' },
+  { name: 'Brazzaville', at: PLACES.brazzaville, side: 'l' },
+  { name: 'Bangui',      at: PLACES.bangui },
+  { name: 'Kisangani',   at: PLACES.kisangani },
+  { name: 'Mbandaka',    at: PLACES.mbandaka },
+  { name: 'Ouesso',      at: PLACES.ouesso },
+  { name: 'Kananga',     at: PLACES.kananga },
+  { name: 'Lubumbashi',  at: PLACES.lubumbashi },
+  { name: 'Matadi',      at: PLACES.matadi },
 ];
+
+// Concept node: where observations are fused and alerts are issued. Not a real facility.
+export const HUB = { name: 'Basin Data Hub', host: 'CICOS · Kinshasa', at: PLACES.kinshasa };
+
+// Data-flow role of each asset type: does it send observations to the hub, receive alerts/tasking, or both?
+export const ASSET_ROLE = {
+  satellite:  { sends: true,  receives: false },
+  uav:        { sends: true,  receives: true },
+  ground:     { sends: true,  receives: false },
+  water:      { sends: true,  receives: true },
+  community:  { sends: true,  receives: true },
+  government: { sends: false, receives: true },
+};
+
+// Which way data moves at each stage (drives the Data flow overlay and its legend text).
+export const STAGE_FLOW = {
+  observe: 'in', collect: 'in', integrate: 'in', assess: 'in',
+  forecast: 'hub', prioritize: 'hub',
+  deploy: 'out', support: 'out',
+  feedback: 'loop',
+};
+export const FLOW_MODE_LABEL = {
+  in: 'data flows in to the hub',
+  hub: 'the hub fuses, forecasts and ranks',
+  out: 'alerts and tasking flow out',
+  loop: 'everything loops back',
+};
 
 export const RIVER_LABELS = [
   { name: 'Congo',   lon: 21.2, lat: 1.95 },

@@ -1,8 +1,9 @@
 // Flood scenario playback: an illustrative Upper-Ubangi flood walked through the nine Con Ops stages.
 // Timings and magnitudes are notional; geography (river reach, gauges, towns) is real.
 import { Cesium as C } from './cesium.js';
+import { MAX_ALT } from './globe.js';
 import { FLOW_CHAINS } from './riverflow.js';
-import { HUB } from './dataflow.js';
+import { HUB, PLACES } from './content.js';
 import { kmBetween, resample } from './fx.js';
 import { ASSET_ICON } from './icons.js';
 import { token } from './theme.js';
@@ -48,9 +49,6 @@ const CAMS = {
   wide:   { box: [12.5, -6.5, 26.0, 8.0], pitch: -60, scale: 2.0 },
 };
 
-const PLACES = {
-  bangui: [18.56, 4.37], mobaye: [21.18, 4.32], mongoumba: [18.60, 3.64], impfondo: [18.06, 1.62],
-};
 
 // The real Ubangi main stem from HydroRIVERS (the chain passing Bangui), upstream → downstream.
 function ubangiReach() {
@@ -120,7 +118,7 @@ export function createScenario(globe, { dataflow, makeMarker, hubEl }) {
   // ---- HTML markers ----
   const mk = (html, cls, [lon, lat], h = 0) => {
     const d = makeMarker(html, cls);
-    const m = globe.addMarker(d, lon, lat, h, { maxAlt: 12_000_000 });
+    const m = globe.addMarker(d, lon, lat, h, { maxAlt: MAX_ALT.scenario });
     m.on = false;
     return { d, m };
   };
@@ -177,7 +175,7 @@ export function createScenario(globe, { dataflow, makeMarker, hubEl }) {
     hubEl.classList.toggle('is-busy', !!p.hub);
 
     dataflow.clearCustom();
-    const hub = [HUB.lon, HUB.lat, 0];
+    const hub = [...HUB.at, 0];
     for (const [pt, dir] of p.links || []) {
       if (dir === 'in') dataflow.addCustom([pt[0], pt[1], pt[2] || 0], hub, 'in');
       else if (dir === 'out') dataflow.addCustom(hub, [pt[0], pt[1], 0], 'out');
