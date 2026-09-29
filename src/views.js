@@ -1,17 +1,17 @@
-import { STEPS, ZONES, ASSET_INFO, STAKE, ZONE_GEO, OODA } from './content.js';
+import { STAGES, ZONES, ASSET_INFO, STAKE, ZONE_GEO, OODA } from './content.js';
 import { ASSET_ICON, ICON } from './icons.js';
 
 export const pad = n => String(n).padStart(2, '0');
 export const fmt = n => n.toLocaleString('en-US');
 const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;');
 
-const stepBy = Object.fromEntries(STEPS.map(s => [s.k, s]));
+const stageBy = Object.fromEntries(STAGES.map(s => [s.k, s]));
 export const zoneBy = Object.fromEntries(ZONES.map(z => [z.k, z]));
 export const zoneIndex = k => ZONES.findIndex(z => z.k === k);
 export const zonesForStage = k => ZONES.filter(z => z.stages.includes(k));
 export const zonesForAsset = k => ZONES.filter(z => z.assets.includes(k));
 
-const PHASE_SPANS = OODA.map(p => ({ p, from: STEPS.findIndex(s => s.ooda === p), n: STEPS.filter(s => s.ooda === p).length }));
+const PHASE_SPANS = OODA.map(p => ({ p, from: STAGES.findIndex(s => s.ooda === p), n: STAGES.filter(s => s.ooda === p).length }));
 
 // ---------- left rail ----------
 export function zonesRail(zp) {
@@ -35,7 +35,7 @@ export function processRail() {
     <div class="pr-grid">
       ${PHASE_SPANS.map(({ p, from, n }) => `<div class="pr-phase" style="grid-column:${from + 1} / span ${n}"><span>${p}</span></div>`).join('')}
       <div class="pr-track" style="grid-column:1 / -1"></div>
-      ${STEPS.map((s, i) => `
+      ${STAGES.map((s, i) => `
         <button class="pr-node" data-stage="${s.k}" style="grid-column:${i + 1}" title="${pad(s.n)} · ${esc(s.title)}">
           <span class="pr-dot"><b>${s.n}</b></span>
         </button>`).join('')}
@@ -46,7 +46,7 @@ export function processRail() {
 
 export function railCaption(sel) {
   if (sel?.type === 'stage') {
-    const s = stepBy[sel.k];
+    const s = stageBy[sel.k];
     return `<span class="pr-cap-n">${pad(s.n)}</span><span class="pr-cap-t">${esc(s.title)}</span><span class="pr-cap-g">${esc(s.gapLabel)}</span>`;
   }
   if (sel?.type === 'zone') {
@@ -88,7 +88,7 @@ export function basinPanel(basin, zp) {
 
 export function zonePanel(k, zp, basin) {
   const z = zoneBy[k], i = zoneIndex(k), p = zp[k];
-  const stages = z.stages.map(s => stepBy[s]);
+  const stages = z.stages.map(s => stageBy[s]);
   return `
     ${head(`<span>Focus zone ${pad(i + 1)}</span><i></i><span>${ZONE_GEO[k].kind}</span>`, esc(z.name), `<div class="p-issue"><i></i>${esc(z.issue)}</div>`)}
     <div class="p-stats">
@@ -115,10 +115,10 @@ function assetRow(a) {
 }
 
 export function stagePanel(k) {
-  const s = stepBy[k], i = STEPS.indexOf(s);
+  const s = stageBy[k], i = STAGES.indexOf(s);
   const zones = zonesForStage(k);
   return `
-    ${head(`<span>Stage ${pad(s.n)} of ${pad(STEPS.length)}</span><i></i><span>${s.ooda}</span>`, esc(s.title))}
+    ${head(`<span>Stage ${pad(s.n)} of ${pad(STAGES.length)}</span><i></i><span>${s.ooda}</span>`, esc(s.title))}
     <div class="p-block req">
       <div class="p-block-top"><span class="tag">${esc(s.req)}</span><span class="lbl">Requirement</span></div>
       <p>${esc(s.reqText)}</p>
@@ -131,7 +131,7 @@ export function stagePanel(k) {
     <div class="p-stake">${s.stake.map(x => `<span class="stake">${esc(STAKE[x].name)}</span>`).join('')}</div>
     <h3 class="p-h">Where it plays out</h3>
     <div class="p-chips">${zones.length ? zones.map(zoneChip).join('') : `<div class="p-basinwide">${ICON.globe}<span>Basin-wide. This stage runs across the whole system, not in one zone.</span></div>`}</div>
-    ${pager('stage', i, STEPS.length, STEPS[(i + STEPS.length - 1) % STEPS.length].title, STEPS[(i + 1) % STEPS.length].title)}`;
+    ${pager('stage', i, STAGES.length, STAGES[(i + STAGES.length - 1) % STAGES.length].title, STAGES[(i + 1) % STAGES.length].title)}`;
 }
 
 export function assetPanel(a) {
@@ -152,9 +152,9 @@ const pager = (kind, i, n, prevName, nextName) => `
 
 // ---------- Process & Gaps view ----------
 export function processView() {
-  const cols = `grid-template-columns: var(--pv-label) repeat(${STEPS.length}, minmax(0, 1fr))`;
+  const cols = `grid-template-columns: var(--pv-label) repeat(${STAGES.length}, minmax(0, 1fr))`;
   const row = (label, cells, cls = '') => `<div class="pv-row ${cls}" style="${cols}"><div class="pv-label">${label}</div>${cells}</div>`;
-  const gaps = [...new Set(STEPS.map(s => s.gapLabel))];
+  const gaps = [...new Set(STAGES.map(s => s.gapLabel))];
   return `
     <div class="pv-inner">
       <header class="pv-head">
@@ -167,7 +167,7 @@ export function processView() {
 
       <div class="pv-table">
         ${row('OODA phase', PHASE_SPANS.map(({ p, from, n }) => `<div class="pv-phase" style="grid-column:${from + 2} / span ${n}"><span>${p}</span></div>`).join(''), 'pv-phases')}
-        ${row('Stage', STEPS.map(s => `
+        ${row('Stage', STAGES.map(s => `
           <button class="pv-card" data-stage="${s.k}" style="--i:${s.n}">
             <span class="pv-num">${pad(s.n)}</span>
             <span class="pv-card-title">${esc(s.title)}</span>
@@ -179,12 +179,12 @@ export function processView() {
 
         <div class="pv-section">Stakeholders</div>
         ${Object.entries(STAKE).map(([k, v]) => row(esc(v.name),
-          STEPS.map(s => `<div class="pv-cell" data-stage="${s.k}">${s.stake.includes(k) ? '<i class="dot"></i>' : '<i class="nodot"></i>'}</div>`).join(''),
+          STAGES.map(s => `<div class="pv-cell" data-stage="${s.k}">${s.stake.includes(k) ? '<i class="dot"></i>' : '<i class="nodot"></i>'}</div>`).join(''),
           'pv-mrow')).join('')}
 
         <div class="pv-section">Focus zones <small>select a zone to fly there</small></div>
         ${ZONES.map((z, i) => row(`<button class="pv-zone" data-zone="${z.k}"><b>${pad(i + 1)}</b>${esc(z.name)}</button>`,
-          STEPS.map(s => `<div class="pv-cell" data-stage="${s.k}">${z.stages.includes(s.k) ? '<i class="dot zone"></i>' : '<i class="nodot"></i>'}</div>`).join(''),
+          STAGES.map(s => `<div class="pv-cell" data-stage="${s.k}">${z.stages.includes(s.k) ? '<i class="dot zone"></i>' : '<i class="nodot"></i>'}</div>`).join(''),
           'pv-mrow pv-zrow')).join('')}
       </div>
 
@@ -192,7 +192,7 @@ export function processView() {
         <div class="pv-section">Capability gaps</div>
         <div class="pv-gap-list">
           ${gaps.map(gp => {
-            const ss = STEPS.filter(s => s.gapLabel === gp);
+            const ss = STAGES.filter(s => s.gapLabel === gp);
             return `<button class="pv-gapcard" data-gap="${esc(gp)}"><span class="pv-gap-name"><i></i>${esc(gp)}</span><span class="pv-gap-text">${esc(ss[0].gapText)}</span><span class="pv-gap-stages">${ss.map(s => `<b>${pad(s.n)}</b>`).join('')}</span></button>`;
           }).join('')}
         </div>
@@ -202,7 +202,7 @@ export function processView() {
 
 // Full-width stage detail band used inside the Process & Gaps view.
 export function stageDetail(k) {
-  const s = stepBy[k];
+  const s = stageBy[k];
   const zones = zonesForStage(k);
   return `
     <div class="pvd">
@@ -240,7 +240,7 @@ export function hubPanel(nIn, nOut) {
     <h3 class="p-h">How it changes by stage</h3>
     <div class="p-chips">
       ${[['observe', 'Stages 1–4: data flows in'], ['forecast', 'Stages 5–6: hub fuses, forecasts, ranks'], ['deploy', 'Stages 7–8: alerts and tasking flow out'], ['feedback', 'Stage 9: everything loops back']]
-        .map(([k, t]) => `<button class="chip chip-stage" data-stage="${k}"><b>${pad(stepBy[k].n)}</b><span>${t}</span>${ICON.arrow}</button>`).join('')}
+        .map(([k, t]) => `<button class="chip chip-stage" data-stage="${k}"><b>${pad(stageBy[k].n)}</b><span>${t}</span>${ICON.arrow}</button>`).join('')}
     </div>`;
 }
 
@@ -266,7 +266,7 @@ export function satRows(sats, now) {
 }
 
 export function beatPanel(i, sc) {
-  const b = sc.beats[i], s = stepBy[b.stage];
+  const b = sc.beats[i], s = stageBy[b.stage];
   return `
     ${head(`<span>Flood scenario</span><i></i><span>${b.t}</span>`, esc(b.title))}
     <button class="chip chip-stage p-beat-stage" data-stage="${s.k}"><b>${pad(s.n)}</b><span>${esc(s.title)} · ${s.ooda}</span>${ICON.arrow}</button>
@@ -285,7 +285,7 @@ export function scenarioBar(sc) {
   return `
     <button class="sc-play icon-btn" data-act="sc-play" title="Play / pause (K)"><span class="i-play">${ICON.play}</span><span class="i-pause">${ICON.pause}</span></button>
     <div class="sc-track">
-      ${sc.beats.map((b, i) => `<button class="sc-beat" data-beat="${i}" title="${esc(b.title)}"><span class="sc-dot"><b>${stepBy[b.stage].n}</b></span><span class="sc-t">${b.t}</span></button>`).join('')}
+      ${sc.beats.map((b, i) => `<button class="sc-beat" data-beat="${i}" title="${esc(b.title)}"><span class="sc-dot"><b>${stageBy[b.stage].n}</b></span><span class="sc-t">${b.t}</span></button>`).join('')}
       <div class="sc-line"><i id="sc-fill"></i></div>
     </div>
     <button class="icon-btn" data-act="sc-exit" title="Exit scenario">${ICON.close}</button>`;

@@ -2,7 +2,7 @@ import './style.css';
 import './overlays.css';
 import { Cesium as C } from './cesium.js';
 import { createGlobe, BASIN, ZONE_PROPS } from './globe.js';
-import { STEPS, ZONES, ASSET_INFO, ZONE_GEO, CITIES, RIVER_LABELS } from './content.js';
+import { STAGES, ZONES, ASSET_INFO, ZONE_GEO, CITIES, RIVER_LABELS } from './content.js';
 import { ASSET_ICON, ICON, MARK } from './icons.js';
 import { createRiverFlow } from './riverflow.js';
 import { createDataFlow, HUB, STAGE_MODE, SENDS, RECEIVES } from './dataflow.js';
@@ -31,7 +31,7 @@ $('#intro-stats').innerHTML = [
   [`${(BASIN.area_km2 / 1e6).toFixed(2)}M`, 'km² basin'],
   [BASIN.catchments, 'catchments mapped'],
   [ZONES.length, 'focus zones'],
-  [STEPS.length, 'stage loop'],
+  [STAGES.length, 'stage loop'],
 ].map(([b, s]) => `<div><b>${b}</b><span>${s}</span></div>`).join('');
 
 // ---------- globe ----------
@@ -158,8 +158,8 @@ function applyHighlights() {
     n.classList.toggle('is-active', sel?.type === 'stage' && sel.k === n.dataset.stage);
     n.classList.toggle('is-linked', zoneStages.includes(n.dataset.stage));
   }
-  const ai = sel?.type === 'stage' ? STEPS.findIndex(s => s.k === sel.k) : -1;
-  $('#process-rail').style.setProperty('--progress', ai < 0 ? 0 : ai / (STEPS.length - 1));
+  const ai = sel?.type === 'stage' ? STAGES.findIndex(s => s.k === sel.k) : -1;
+  $('#process-rail').style.setProperty('--progress', ai < 0 ? 0 : ai / (STAGES.length - 1));
   $('#process-rail').classList.toggle('has-active', ai >= 0);
   $('.pr-loop').classList.toggle('is-active', sel?.type === 'stage' && sel.k === 'feedback');
   $('#pr-caption').innerHTML = V.railCaption(sel);
@@ -347,12 +347,12 @@ const TOUR = [
   { ch: 'The Basin', preset: 'base', run: () => { setView('globe'); select({ type: 'basin' }); } },
   ...ZONES.map(z => ({ ch: 'Focus Zones', preset: 'base', run: () => { setView('globe'); select({ type: 'zone', k: z.k }); } })),
   { ch: 'Space Segment', preset: 'space', run: () => { setView('globe'); select({ type: 'space' }); } },
-  ...STEPS.map(s => ({ ch: 'The Process', preset: 'process', run: () => { setView('globe'); select({ type: 'stage', k: s.k }); } })),
+  ...STAGES.map(s => ({ ch: 'The Process', preset: 'process', run: () => { setView('globe'); select({ type: 'stage', k: s.k }); } })),
   ...SCENARIO.beats.map((b, i) => ({ ch: 'Flood Scenario', preset: 'scenario', run: () => enterBeat(i) })),
   { ch: 'Process & Gaps', run: () => { select(null, { fly: false }); setView('process'); } },
 ];
 const CHAPTERS = [...new Set(TOUR.map(t => t.ch))];
-const TOUR_AT = { basin: 1, zone: 2, space: 2 + ZONES.length, stage: 3 + ZONES.length, beat: 3 + ZONES.length + STEPS.length };
+const TOUR_AT = { basin: 1, zone: 2, space: 2 + ZONES.length, stage: 3 + ZONES.length, beat: 3 + ZONES.length + STAGES.length };
 
 function go(i) {
   i = Math.max(0, Math.min(TOUR.length - 1, i));
@@ -389,7 +389,7 @@ function syncTour() {
   else if (sel?.type === 'basin') i = TOUR_AT.basin;
   else if (sel?.type === 'space') i = TOUR_AT.space;
   else if (sel?.type === 'zone') i = TOUR_AT.zone + V.zoneIndex(sel.k);
-  else if (sel?.type === 'stage') i = TOUR_AT.stage + STEPS.findIndex(s => s.k === sel.k);
+  else if (sel?.type === 'stage') i = TOUR_AT.stage + STAGES.findIndex(s => s.k === sel.k);
   else if (sel?.type === 'beat') i = TOUR_AT.beat + sel.k;
   if (i >= 0) { state.tour = i; updateTourUI(); }
 }
@@ -428,13 +428,13 @@ document.addEventListener('click', e => {
   if (d.page) {
     const [kind, dir] = d.page.split(':');
     if (kind === 'beat') { enterBeat((state.sel.k + +dir + SCENARIO.beats.length) % SCENARIO.beats.length); syncTour(); return; }
-    const list = kind === 'zone' ? ZONES : STEPS;
+    const list = kind === 'zone' ? ZONES : STAGES;
     const i = list.findIndex(x => x.k === state.sel.k);
     select({ type: kind, k: list[(i + +dir + list.length) % list.length].k });
     syncTour(); return;
   }
   if (d.gap) {
-    const s = STEPS.find(x => x.gapLabel === d.gap);
+    const s = STAGES.find(x => x.gapLabel === d.gap);
     select({ type: 'stage', k: s.k }, { fly: false }); syncTour(); return;
   }
   if (d.asset && (t.classList.contains('asset-more') || t.classList.contains('am'))) {
@@ -556,7 +556,7 @@ document.addEventListener('keydown', e => {
   }
   else if (/^[1-9]$/.test(k)) {
     if (state.view === 'scenario') setView('globe');
-    select({ type: 'stage', k: STEPS[+k - 1].k }, { fly: state.view === 'globe' }); syncTour();
+    select({ type: 'stage', k: STAGES[+k - 1].k }, { fly: state.view === 'globe' }); syncTour();
   }
   else if (lk === 'h') { setView('globe'); select({ type: 'basin' }); syncTour(); }
   else if (lk === 'p') { setView(state.view === 'process' ? 'globe' : 'process'); syncTour(); }

@@ -1,7 +1,7 @@
 // Con Ops content — carried over verbatim from the team-validated prototype.
 // Zone blurbs are general-knowledge geography: verify before final submission.
 
-export const STEPS = [
+export const STAGES = [
   {k:'observe',   n:1, title:'Observe Environment',            ooda:'Sense',      req:'R-1',
     reqText:'The SoS shall integrate space-based, airborne, ground-based, and community observations across the Congo River Basin.',
     gapLabel:'Data Integration gap', gapText:'Separate observation systems lack a common basin-wide data architecture.',
