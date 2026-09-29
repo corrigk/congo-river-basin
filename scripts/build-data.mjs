@@ -64,7 +64,6 @@ const congoMain = at([20, 0]).properties.MAIN_BAS;
 const congo = all.filter(f => f.properties.MAIN_BAS === congoMain);
 console.log(`  Congo MAIN_BAS ${congoMain}: ${congo.length} catchments`);
 
-const byId = new Map(congo.map(f => [f.properties.HYBAS_ID, f]));
 const upstreamOf = new Map();
 for (const f of congo) {
   const d = f.properties.NEXT_DOWN;

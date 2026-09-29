@@ -5,8 +5,8 @@ import * as sat from 'satellite.js';
 import tle from './data/tle.json';
 import { ASSET_ICON } from './icons.js';
 
-export const SPEED = 90; // simulated seconds per real second
-export const KIND = {
+const SPEED = 90; // simulated seconds per real second
+const KIND = {
   sar:     { color: '#7FCBEA', label: 'SAR' },
   optical: { color: '#E6C98F', label: 'Optical' },
   precip:  { color: '#A9B8FF', label: 'Precipitation' },
@@ -52,8 +52,7 @@ export async function createOrbits(globe, { inBasin }) {
   }));
 
   const simStart = Date.now(), realStart = performance.now();
-  let simOffset = 0;
-  const simNow = () => new Date(simStart + simOffset + (performance.now() - realStart) * SPEED);
+  const simNow = () => new Date(simStart + (performance.now() - realStart) * SPEED);
 
   function geo(s, date) {
     const pv = sat.propagate(s.rec, date);
@@ -115,6 +114,5 @@ export async function createOrbits(globe, { inBasin }) {
   return {
     sats, simNow,
     onUpdate: f => listeners.add(f),
-    skip: minutes => { simOffset += minutes * 60000; for (const s of sats) s.nextPass = null; },
   };
 }

@@ -10,7 +10,6 @@ import maskGeo from './data/mask.json';
 const css = c => C.Color.fromCssColorString(c);
 const GOLD = css('#CFB991');
 const RIVER = css('#7FCBEA');
-const LINK = css('#7FCBEA');
 const WHITE = C.Color.WHITE;
 
 // Vector heights (m) above the ellipsoid so layers sort cleanly against the globe.
@@ -160,18 +159,18 @@ export async function createGlobe({ container, creditContainer }) {
 
   // Glowing outline for the selected zone (rebuilt on selection).
   const glowCollection = P.add(new C.PrimitiveCollection());
-  function setGlow(k, color) {
+  function setGlow(k) {
     glowCollection.removeAll();
     if (!k) return;
     const f = zonesGeo.features.find(z => z.properties.zone === k);
-    glowCollection.add(linePrimitive({ features: [f] }, { width: 10, material: glowMat(color, 0.2) }));
+    glowCollection.add(linePrimitive({ features: [f] }, { width: 10, material: glowMat(GOLD, 0.2) }));
   }
 
   const ZSTYLE = {
     idle:     { fill: GOLD.withAlpha(0.035), line: WHITE.withAlpha(0.30) },
     hover:    { fill: GOLD.withAlpha(0.16),  line: GOLD.withAlpha(0.85) },
     selected: { fill: GOLD.withAlpha(0.20),  line: GOLD.withAlpha(1) },
-    linked:   { fill: LINK.withAlpha(0.20),  line: LINK.withAlpha(1) },
+    linked:   { fill: RIVER.withAlpha(0.20), line: RIVER.withAlpha(1) },
     dim:      { fill: C.Color.TRANSPARENT,   line: WHITE.withAlpha(0.16) },
   };
   let zoneState = Object.fromEntries(zoneKeys.map(k => [k, 'idle']));
@@ -330,7 +329,7 @@ export async function createGlobe({ container, creditContainer }) {
       polyline: {
         positions: [C.Cartesian3.fromDegrees(...from), C.Cartesian3.fromDegrees(...to)],
         width: 1.5, arcType: C.ArcType.NONE,
-        material: new C.PolylineDashMaterialProperty({ color: LINK.withAlpha(0.8), dashLength: 8 }),
+        material: new C.PolylineDashMaterialProperty({ color: RIVER.withAlpha(0.8), dashLength: 8 }),
       },
     });
   }
@@ -339,12 +338,9 @@ export async function createGlobe({ container, creditContainer }) {
     viewer, scene, camera, layers,
     flyHome, flyToZone, flyIntro, flySpace, flyToBox, setSpace, spin,
     onTick: f => ticks.add(f),
-    get overlay() { return overlay; },
-    get near() { return near; },
     setOverlays: on => { overlayTarget = on ? 1 : 0; },
     setZoneStates(map) { zoneState = { ...Object.fromEntries(zoneKeys.map(k => [k, 'idle'])), ...map }; zonesDirty = true; },
-    setGlow: (k, kind = 'selected') => setGlow(k, kind === 'linked' ? LINK : GOLD),
+    setGlow,
     zoneAt, lonLatAt, inBasin, addMarker, addBeam,
-    zoom: f => camera.zoomIn(camera.positionCartographic.height * f),
   };
 }

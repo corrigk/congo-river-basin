@@ -57,7 +57,6 @@ export function createWeather(globe) {
 
   return {
     cloudDay: isoDay(cloudDay),
-    frames: frames.map(f => f.t),
     get current() { return frames[idx].t; },
     toggle() { playing = !playing; return playing; },
     get playing() { return playing; },

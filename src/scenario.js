@@ -62,14 +62,14 @@ function ubangiReach() {
 
 export function createScenario(globe, { dataflow, makeMarker, hubEl }) {
   const { pts, idx } = ubangiReach();
-  const iB = idx(PLACES.bangui), iMo = idx(PLACES.mobaye), iIm = idx(PLACES.impfondo);
+  const iB = idx(PLACES.bangui), iIm = idx(PLACES.impfondo);
   const reach = (a, b) => pts.slice(Math.min(a, b), Math.max(a, b) + 1);
   const floodPath = reach(idx([19.25, 4.25]), idx([18.35, 3.2]));
 
   // ---- faded map elements (alpha animated toward a per-beat target) ----
   const fx = [];
-  function fading(entity, colorFn) {
-    const f = { entity, a: 0, target: 0, colorFn };
+  function fading(entity) {
+    const f = { entity, a: 0, target: 0 };
     fx.push(f);
     return f;
   }

@@ -5,7 +5,7 @@ export const pad = n => String(n).padStart(2, '0');
 export const fmt = n => n.toLocaleString('en-US');
 const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;');
 
-export const stepBy = Object.fromEntries(STEPS.map(s => [s.k, s]));
+const stepBy = Object.fromEntries(STEPS.map(s => [s.k, s]));
 export const zoneBy = Object.fromEntries(ZONES.map(z => [z.k, z]));
 export const zoneIndex = k => ZONES.findIndex(z => z.k === k);
 export const zonesForStage = k => ZONES.filter(z => z.stages.includes(k));
@@ -292,7 +292,7 @@ export function scenarioBar(sc) {
 }
 
 // ---------- overlay dock + legend cards ----------
-export const OVERLAYS = [
+const OVERLAYS = [
   ['dataflow', 'Data flow', 'D', ICON.flow],
   ['sats', 'Satellites', 'S', ICON.orbit],
   ['weather', 'Weather', 'W', ICON.cloud],
