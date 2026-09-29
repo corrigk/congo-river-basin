@@ -1,0 +1,29 @@
+{
+  "name": "congo-conops",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "data": "node scripts/build-data.mjs && node scripts/build-mask.mjs && node scripts/build-extras.mjs",
+    "build:single": "vite build --config vite.single.config.js"
+  },
+  "keywords": [],
+  "type": "module",
+  "dependencies": {
+    "@fontsource/big-shoulders-text": "^5.3.0",
+    "@fontsource/inter": "^5.3.0",
+    "cesium": "^1.145.0",
+    "satellite.js": "^5.0.0"
+  },
+  "devDependencies": {
+    "mapshaper": "^0.7.66",
+    "polygon-clipping": "^0.15.7",
+    "vite": "^8.3.0",
+    "vite-plugin-singlefile": "^2.3.3",
+    "vite-plugin-static-copy": "^4.1.1"
+  }
+}
