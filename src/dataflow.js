@@ -2,6 +2,7 @@
 // Inbound (mint) = observations flowing to the hub; outbound (gold) = alerts / tasking flowing out.
 import { Cesium as C } from './cesium.js';
 import { flowMaterial, arc, setAlpha } from './fx.js';
+import { token } from './theme.js';
 
 export const HUB = { lon: 15.31, lat: -4.33, name: 'Basin Data Hub' };
 
@@ -9,8 +10,8 @@ export const HUB = { lon: 15.31, lat: -4.33, name: 'Basin Data Hub' };
 export const SENDS = new Set(['satellite', 'uav', 'ground', 'water', 'community']);
 export const RECEIVES = new Set(['government', 'community', 'water', 'uav']);
 
-const IN = C.Color.fromCssColorString('#7CF5CF');
-const OUT = C.Color.fromCssColorString('#E6C98F');
+const IN = C.Color.fromCssColorString(token('data'));
+const OUT = C.Color.fromCssColorString(token('alert'));
 
 // Stage → which directions are active.
 export const STAGE_MODE = {

@@ -5,6 +5,7 @@ import { FLOW_CHAINS } from './riverflow.js';
 import { HUB } from './dataflow.js';
 import { kmBetween, resample } from './fx.js';
 import { ASSET_ICON } from './icons.js';
+import { token } from './theme.js';
 
 export const SCENARIO = {
   title: 'Flood event · Upper Ubangi',
@@ -109,11 +110,11 @@ export function createScenario(globe, { dataflow, makeMarker, hubEl }) {
   const els = {
     storm1: storm(24.2, 5.6, 330_000, 210_000),
     storm2: storm(22.6, 6.3, 220_000, 150_000),
-    gpmSwath: swath([25.6, 11], [22.4, -1], 245_000, '#A9B8FF'),
-    sarSwath: swath([20.4, 9], [18.2, -1.5], 250_000, '#7FCBEA'),
-    observed: corridor(floodPath, 9_000, '#7FCBEA', 0.55),
-    forecast: corridor(floodPath, 26_000, '#DB6A43', 0.35),
-    peak: corridor(floodPath, 30_000, '#DB6A43', 0.55),
+    gpmSwath: swath([25.6, 11], [22.4, -1], 245_000, token('precip')),
+    sarSwath: swath([20.4, 9], [18.2, -1.5], 250_000, token('river')),
+    observed: corridor(floodPath, 9_000, token('river'), 0.55),
+    forecast: corridor(floodPath, 26_000, token('rust-hi'), 0.35),
+    peak: corridor(floodPath, 30_000, token('rust-hi'), 0.55),
   };
 
   // ---- HTML markers ----

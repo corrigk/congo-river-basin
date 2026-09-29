@@ -4,13 +4,14 @@ import { Cesium as C } from './cesium.js';
 import * as sat from 'satellite.js';
 import tle from './data/tle.json';
 import { ASSET_ICON } from './icons.js';
+import { token } from './theme.js';
 
 const SPEED = 90; // simulated seconds per real second
 const KIND = {
-  sar:     { color: '#7FCBEA', label: 'SAR' },
-  optical: { color: '#E6C98F', label: 'Optical' },
-  precip:  { color: '#A9B8FF', label: 'Precipitation' },
-  hydro:   { color: '#7FE0C3', label: 'Surface water' },
+  sar:     { color: token('river'), label: 'SAR' },
+  optical: { color: token('alert'), label: 'Optical' },
+  precip:  { color: token('precip'), label: 'Precipitation' },
+  hydro:   { color: token('hydro'), label: 'Surface water' },
 };
 
 function iconImage(color) {

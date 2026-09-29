@@ -30,4 +30,4 @@ export const ICON = {
   flow: svg('<circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/><path d="M7 12h3M14 12h3"/>'),
 };
 
-export const MARK = `<svg viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="14.5" fill="none" stroke="#CFB991" stroke-width="1.4"/><path d="M7 20.5c3-1 3.6-5.2 7-6.2s4.8 2.4 7.6 1.3c2-.8 2.6-3.1 3.4-4.6" fill="none" stroke="#7FCBEA" stroke-width="2" stroke-linecap="round"/><circle cx="16" cy="16" r="2" fill="#CFB991"/></svg>`;
+export const MARK = `<svg viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="14.5" fill="none" style="stroke:var(--gold)" stroke-width="1.4"/><path d="M7 20.5c3-1 3.6-5.2 7-6.2s4.8 2.4 7.6 1.3c2-.8 2.6-3.1 3.4-4.6" fill="none" style="stroke:var(--river)" stroke-width="2" stroke-linecap="round"/><circle cx="16" cy="16" r="2" style="fill:var(--gold)"/></svg>`;

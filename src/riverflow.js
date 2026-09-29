@@ -5,6 +5,7 @@ import flow from './data/flow.json';
 
 export const FLOW_CHAINS = flow;
 
+// Pulse tints are near-white shades of the river colour so the comets read on top of the static rivers.
 const CLASSES = [
   { min: 8000, width: 5,   piece: 220, speed: 0.55, color: '#E8FAFF', a: 0.95 }, // main stem
   { min: 1500, width: 3.5, piece: 150, speed: 0.5,  color: '#CFF1FF', a: 0.85 },

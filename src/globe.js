@@ -1,5 +1,6 @@
 import { Cesium as C } from './cesium.js';
 import { tickFlows } from './fx.js';
+import { token } from './theme.js';
 import basinGeo from './data/basin.json';
 import zonesGeo from './data/zones.json';
 import riversGeo from './data/rivers.json';
@@ -8,8 +9,8 @@ import bordersGeo from './data/borders.json';
 import maskGeo from './data/mask.json';
 
 const css = c => C.Color.fromCssColorString(c);
-const GOLD = css('#CFB991');
-const RIVER = css('#7FCBEA');
+const GOLD = css(token('gold'));
+const RIVER = css(token('river'));
 const WHITE = C.Color.WHITE;
 
 // Vector heights (m) above the ellipsoid so layers sort cleanly against the globe.
