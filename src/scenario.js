@@ -1,4 +1,5 @@
-// Flood scenario playback: an illustrative Upper-Ubangi flood walked through the nine Con Ops stages.
+// Example: Flooding. One worked example of the all-hazards system: an illustrative Upper-Ubangi flood
+// walked through the same nine Con Ops stages every hazard uses.
 // Timings and magnitudes are notional; geography (river reach, gauges, towns) is real.
 import { Cesium as C } from './cesium.js';
 import { MAX_ALT } from './globe.js';
@@ -9,8 +10,8 @@ import { ASSET_ICON } from './icons.js';
 import { token } from './theme.js';
 
 export const SCENARIO = {
-  title: 'Flood event · Upper Ubangi',
-  note: 'Illustrative scenario. Timings and magnitudes are notional; river reach, gauges and towns are real.',
+  title: 'Example: Flooding · Upper Ubangi',
+  note: 'One worked example of the all-hazards system; the same nine stages serve every hazard in the System Overview. Illustrative only: timings and magnitudes are notional; the river reach, gauges and towns are real.',
   beats: [
     { t: 'T−72 h', stage: 'observe', cam: 'upper', title: 'Heavy rain builds over the upper Ubangi',
       text: 'Precipitation radar and IMERG rainfall estimates flag an intense, slow-moving storm system over the Mbomou–Uele headwaters.',
