@@ -1,11 +1,12 @@
 import { STAGES, ZONES, ASSET_INFO, STAKE, ZONE_GEO, OODA, STAGE_FLOW, FLOW_MODE_LABEL } from './content.js';
 import { ASSET_ICON, ICON } from './icons.js';
+import { HAZARDS, hazardBy, hazardsForZone, hazardsForAsset, SENSING_ASSETS, OVERVIEW_COLUMNS } from './hazards.js';
 
 export const pad = n => String(n).padStart(2, '0');
 export const fmt = n => n.toLocaleString('en-US');
-const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;');
+export const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;');
 
-const stageBy = Object.fromEntries(STAGES.map(s => [s.k, s]));
+export const stageBy = Object.fromEntries(STAGES.map(s => [s.k, s]));
 export const zoneBy = Object.fromEntries(ZONES.map(z => [z.k, z]));
 export const zoneIndex = k => ZONES.findIndex(z => z.k === k);
 export const zonesForStage = k => ZONES.filter(z => z.stages.includes(k));
@@ -73,6 +74,20 @@ const head = (eyebrow, title, extra = '') => `
 
 const stageChip = s => `
   <button class="chip chip-stage" data-stage="${s.k}"><b>${pad(s.n)}</b><span>${esc(s.title)}</span>${ICON.arrow}</button>`;
+const hazardChip = h => `
+  <button class="chip chip-hazard" data-hazard="${h.k}"><i></i><span>${esc(h.name)}</span>${ICON.arrow}</button>`;
+export const exampleButton = () => `
+  <button class="btn-example" data-act="example">${ICON.play}<span><small>See it in action</small>Example: Flooding</span>${ICON.arrow}</button>`;
+// Shown wherever regional descriptions appear.
+const VERIFY_NOTE = 'Regional descriptions are general-knowledge starting points. Verify before presenting.';
+// Per-hazard outputs for one stage. Only Forecast is filled in so far; the rest are placeholders to complete.
+export function stageOutputs(k) {
+  if (k === 'forecast') return `
+    <h3 class="p-h">What “forecast” means for each hazard</h3>
+    <ul class="p-forecasts">${HAZARDS.map(h => `<li><button data-hazard="${h.k}">${esc(h.short)}</button><span class="${h.forecastTodo ? 'is-todo' : ''}">${esc(h.forecast)}</span></li>`).join('')}</ul>`;
+  return `<p class="p-todo">TODO: verify. Add what this stage produces for each hazard (src/hazards.js).</p>`;
+}
+
 const zoneChip = z => `
   <button class="chip chip-zone" data-zone="${z.k}"><i></i><span>${esc(z.name)}</span>${ICON.arrow}</button>`;
 
@@ -91,6 +106,8 @@ export function basinPanel(basin, zp) {
       <div><i class="lg-line river"></i>Tributaries</div>
       <div><i class="lg-line dash"></i>National borders</div>
     </div>
+    <h3 class="p-h">Hazards monitored</h3>
+    <div class="p-chips">${HAZARDS.map(hazardChip).join('')}</div>
     <h3 class="p-h">Focus zones</h3>
     <div class="p-chips">${ZONES.map(zoneChip).join('')}</div>`;
 }
@@ -106,10 +123,14 @@ export function zonePanel(k, zp, basin) {
       <div><b>${((p.area_km2 / basin.area_km2) * 100).toFixed(1)}%</b><span>of the basin</span></div>
     </div>
     <p class="p-text">${esc(z.blurb)}</p>
+    <h3 class="p-h">Hazards monitored here</h3>
+    <div class="p-chips">${hazardsForZone(k).map(hazardChip).join('') || '<p class="p-todo">TODO: verify. No hazard linked to this zone yet.</p>'}</div>
+    ${hazardsForZone(k).some(h => h.example) ? exampleButton() : ''}
     <h3 class="p-h">Process stages active here</h3>
     <div class="p-chips">${stages.map(stageChip).join('')}</div>
     <h3 class="p-h">Assets deployed</h3>
     <div class="p-assets">${z.assets.map(a => assetRow(a)).join('')}</div>
+    <p class="p-foot">${VERIFY_NOTE}</p>
     ${pager('zone', i, ZONES.length, ZONES[(i + ZONES.length - 1) % ZONES.length].name, ZONES[(i + 1) % ZONES.length].name)}`;
 }
 
@@ -138,6 +159,8 @@ export function stagePanel(k) {
     </div>
     <h3 class="p-h">Stakeholders</h3>
     <div class="p-stake">${s.stake.map(x => `<span class="stake">${esc(STAKE[x].name)}</span>`).join('')}</div>
+    <p class="p-text p-allhaz">${ICON.loop}<span>This stage runs for every hazard the system monitors, not just one.</span></p>
+    ${stageOutputs(k)}
     <h3 class="p-h">Where it plays out</h3>
     <div class="p-chips">${zones.length ? zones.map(zoneChip).join('') : `<div class="p-basinwide">${ICON.globe}<span>Basin-wide. This stage runs across the whole system, not in one zone.</span></div>`}</div>
     ${pager('stage', i, STAGES.length, STAGES[(i + STAGES.length - 1) % STAGES.length].title, STAGES[(i + 1) % STAGES.length].title)}`;
@@ -148,8 +171,27 @@ export function assetPanel(a) {
   return `
     ${head('<span>Asset class</span><i></i><span>Observation &amp; response</span>', esc(info.name), `<div class="p-asset-hero">${ASSET_ICON[a]}</div>`)}
     <ul class="p-list">${info.items.map(t => `<li>${esc(t)}</li>`).join('')}</ul>
+    <h3 class="p-h">Hazards it serves</h3>
+    <div class="p-chips">${hazardsForAsset(a).map(hazardChip).join('') || '<p class="p-text">Acts on alerts for every hazard (governance and coordination).</p>'}</div>
     <h3 class="p-h">Deployed in</h3>
     <div class="p-chips">${zonesForAsset(a).map(zoneChip).join('')}</div>`;
+}
+
+// ---------- hazard panel (map view) ----------
+export function hazardPanel(k) {
+  const h = hazardBy[k];
+  const zones = Object.keys(h.zones).map(z => zoneBy[z]);
+  return `
+    ${head('<span>Hazard</span><i></i><span>All-hazards system</span>', esc(h.name))}
+    <p class="p-text">${esc(h.text)}</p>
+    <div class="p-block req"><div class="p-block-top"><span class="lbl">Forecast output</span></div><p class="${h.forecastTodo ? 'is-todo' : ''}">${esc(h.forecast)}</p></div>
+    <h3 class="p-h">Data sources</h3>
+    <div class="p-chips">${SENSING_ASSETS.filter(a => h.sources[a]).map(a => `<button class="chip chip-src${h.sources[a] === 'proposed' ? ' is-proposed' : ''}" data-source="${a}"><span class="chip-ico">${ASSET_ICON[a]}</span><span>${esc(ASSET_INFO[a].name)}${h.sources[a] === 'proposed' ? ' <em>proposed · verify</em>' : ''}</span>${ICON.arrow}</button>`).join('')}</div>
+    <h3 class="p-h">Where it plays out</h3>
+    <div class="p-chips">${zones.length ? zones.map(zoneChip).join('') : `<div class="p-basinwide">${ICON.globe}<span>Basin-wide. TODO: verify which zones to highlight.</span></div>`}</div>
+    <p class="p-text p-allhaz">${ICON.loop}<span>Runs through all nine stages, like every other hazard.</span></p>
+    ${h.example ? exampleButton() : ''}
+    <p class="p-foot">Basis: ${esc(h.basis)}.</p>`;
 }
 
 const pager = (kind, i, n, prevName, nextName) => `
@@ -171,7 +213,7 @@ export function processView() {
           <div class="pv-eyebrow">Nine-stage operational loop</div>
           <h2 class="pv-title">Process &amp; Gaps</h2>
         </div>
-        <p class="pv-lede">Each stage traces to a system requirement, and to the capability gap that blocks it today. Select any stage for the detail, or a zone to fly there.</p>
+        <p class="pv-lede">Each stage traces to a system requirement, and to the capability gap that blocks it today. The same nine stages run for every hazard. Select any stage for the detail, or a zone to fly there.</p>
       </header>
 
       <div class="pv-table">
@@ -256,7 +298,7 @@ export function spacePanel(tleDate) {
   return `
     ${head('<span>Space segment</span><i></i><span>Live orbits</span>', 'Eyes in orbit')}
     <p class="p-text">Six real Earth-observation satellites, propagated from today's orbital elements. Radar sees through the basin's near-constant cloud, optical imagers map land cover, GPM measures rainfall, and SWOT measures river and lake heights.</p>
-    <p class="p-text">The weather layer is NASA's latest global view: VIIRS true-colour clouds from yesterday, plus a looping GPM IMERG rainfall animation over the past day.</p>
+    <p class="p-text">The weather layer is NASA's latest global view: VIIRS true-color clouds from yesterday, plus a looping GPM IMERG rainfall animation over the past day.</p>
     <h3 class="p-h">Tracked satellites</h3>
     <div class="sat-list" id="panel-sats"></div>
     <p class="p-foot">TLEs: CelesTrak, fetched ${tleDate}. Time runs ×90 so passes are visible live. Weather: NASA GIBS.</p>`;
@@ -276,7 +318,7 @@ export function satRows(sats, now) {
 export function beatPanel(i, sc) {
   const b = sc.beats[i], s = stageBy[b.stage];
   return `
-    ${head(`<span>Flood scenario</span><i></i><span>${b.t}</span>`, esc(b.title))}
+    ${head(`<span>Example: Flooding</span><i></i><span>${b.t}</span>`, esc(b.title))}
     <button class="chip chip-stage p-beat-stage" data-stage="${s.k}"><b>${pad(s.n)}</b><span>${esc(s.title)} · ${s.ooda}</span>${ICON.arrow}</button>
     <p class="p-text">${esc(b.text)}</p>
     <h3 class="p-h">What the SoS does</h3>
@@ -291,6 +333,7 @@ export function beatPanel(i, sc) {
 
 export function scenarioBar(sc) {
   return `
+    <span class="sc-label"><small>Example</small>Flooding</span>
     <button class="sc-play icon-btn" data-act="sc-play" title="Play / pause (K)" aria-label="Play or pause the example"><span class="i-play">${ICON.play}</span><span class="i-pause">${ICON.pause}</span></button>
     <div class="sc-track">
       ${sc.beats.map((b, i) => `<button class="sc-beat" data-beat="${i}" title="${esc(b.title)}"><span class="sc-dot"><b>${stageBy[b.stage].n}</b></span><span class="sc-t">${b.t}</span></button>`).join('')}
@@ -326,7 +369,7 @@ export function legendSats() {
 export function legendWeather(w) {
   return `<div class="lg-card" data-card="weather">
     <div class="lg-h">Weather <button class="lg-btn" data-act="wx-play" title="Play / pause rain loop" aria-label="Play or pause the rain loop"><span class="i-play">${ICON.play}</span><span class="i-pause">${ICON.pause}</span></button></div>
-    <div class="lg-row"><span class="wx-k">Clouds</span>VIIRS true colour · ${w.cloudDay}</div>
+    <div class="lg-row"><span class="wx-k">Clouds</span>VIIRS true color · ${w.cloudDay}</div>
     <div class="lg-row"><span class="wx-k">Rain</span>GPM IMERG · <b id="wx-time"></b></div>
     <div class="wx-ramp"><i></i><span>Light</span><span>Heavy</span></div></div>`;
 }
@@ -357,8 +400,8 @@ export function layersPop(layers) {
 export function helpView() {
   const rows = [
     ['→ &nbsp;Space &nbsp;PgDn', 'Next briefing step'], ['← &nbsp;PgUp', 'Previous step'],
-    ['1 – 9', 'Jump to a process stage'], ['H', 'Basin overview'], ['P', 'Toggle Process & Gaps'],
-    ['D &nbsp;S &nbsp;W &nbsp;R &nbsp;G', 'Data flow · Satellites · Weather · River flow · Gaps'], ['K', 'Play / pause scenario'],
+    ['1 – 9', 'Jump to a process stage'], ['O', 'System Overview'], ['H', 'Basin view on the map'], ['P', 'Toggle Process & Gaps'],
+    ['D &nbsp;S &nbsp;W &nbsp;R &nbsp;G', 'Data flow · Satellites · Weather · River flow · Gaps'], ['K', 'Play / pause the flooding example'],
     ['L', 'Layers'], ['F', 'Fullscreen'], ['Esc', 'Close / free explore'],
     ['Drag · Scroll', 'Rotate · zoom the globe'], ['Ctrl + drag', 'Tilt the camera'],
   ];

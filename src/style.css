@@ -376,8 +376,8 @@ svg { display: block; }
   opacity: 0; visibility: hidden; transition: opacity .5s var(--ease), visibility 0s .5s;
   scrollbar-width: thin; scrollbar-color: rgba(255,255,255,.15) transparent;
 }
-[data-view="process"] .process-view { opacity: 1; visibility: visible; transition: opacity .5s var(--ease); }
-[data-view="process"] .zones-rail, [data-view="process"] .process-rail, [data-view="process"] .hud, [data-view="process"] #markers { opacity: 0; pointer-events: none; }
+[data-view="process"] #process-view, [data-view="overview"] #overview-view { opacity: 1; visibility: visible; transition: opacity .5s var(--ease); }
+:is([data-view="process"], [data-view="overview"]) :is(.zones-rail, .process-rail, .hud, #markers) { opacity: 0; pointer-events: none; }
 .pv-inner { --pv-label: 190px; max-width: 1480px; margin: 0 auto; padding: 36px 40px 48px; transition: padding .5s var(--ease); }
 .pv-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 32px; margin-bottom: 28px; }
 .pv-eyebrow { font-size: 11px; letter-spacing: .18em; text-transform: uppercase; color: var(--gold); font-weight: 600; }
@@ -490,7 +490,7 @@ svg { display: block; }
 .zr-area { flex: none; }
 
 /* Process view: stage detail renders inline as a full-width band instead of the side panel */
-[data-view="process"] .panel { opacity: 0; pointer-events: none; transform: translateX(calc(100% + 40px)); }
+:is([data-view="process"], [data-view="overview"]) .panel { opacity: 0; pointer-events: none; transform: translateX(calc(100% + 40px)); }
 .pv-card-title { overflow-wrap: break-word; hyphens: auto; }
 .pv-detail { display: grid; grid-template-rows: 0fr; transition: grid-template-rows .55s var(--ease), margin .55s var(--ease); margin-left: calc(var(--pv-label) + 8px); }
 .pv-detail > * { overflow: hidden; min-height: 0; }

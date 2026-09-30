@@ -1,5 +1,6 @@
 import './style.css';
 import './overlays.css';
+import './overview.css';
 import { Cesium as C } from './cesium.js';
 import { createGlobe, BASIN, ZONE_PROPS, MAX_ALT } from './globe.js';
 import { STAGES, ZONES, ASSET_INFO, ASSET_ROLE, ZONE_GEO, CITIES, RIVER_LABELS, HUB, STAGE_FLOW } from './content.js';
@@ -10,6 +11,8 @@ import { createOrbits } from './orbits.js';
 import { createWeather } from './weather.js';
 import { createCoverage, ACCESS } from './coverage.js';
 import { createScenario, SCENARIO } from './scenario.js';
+import { HAZARDS, hazardBy, hazardsForAsset, SENSING_ASSETS, OVERVIEW_COLUMNS } from './hazards.js';
+import { overviewView, overviewDetail } from './overview.js';
 import tle from './data/tle.json';
 import * as V from './views.js';
 
@@ -28,11 +31,12 @@ $('.btn-play').innerHTML = ICON.play;
 $('#zones-rail').innerHTML = V.zonesRail(ZONE_PROPS);
 $('#process-rail').innerHTML = V.processRail();
 $('#process-view').innerHTML = V.processView();
+$('#overview-view').innerHTML = overviewView();
 $('#scenario-bar').innerHTML = V.scenarioBar(SCENARIO);
 $('#help').innerHTML = V.helpView();
 $('#intro-stats').innerHTML = [
   [`${(BASIN.area_km2 / 1e6).toFixed(2)}M`, 'km² basin'],
-  [BASIN.catchments, 'catchments mapped'],
+  [HAZARDS.length, 'hazards monitored'],
   [ZONES.length, 'focus zones'],
   [STAGES.length, 'stage loop'],
 ].map(([b, s]) => `<div><b>${b}</b><span>${s}</span></div>`).join('');
@@ -132,6 +136,8 @@ function applyHighlights() {
     linked = V.zonesForStage(sel.k).map(z => z.k);
   } else if (sel?.type === 'asset') {
     linked = V.zonesForAsset(sel.k).map(z => z.k);
+  } else if (sel?.type === 'hazard') {
+    linked = Object.keys(hazardBy[sel.k].zones);
   }
   if (linked.length) for (const z of ZONES) zs[z.k] = linked.includes(z.k) ? 'linked' : 'dim';
   if (hover && zs[hover] !== 'selected') zs[hover] = 'hover';
@@ -173,6 +179,41 @@ function applyHighlights() {
     b.classList.toggle('is-active', sel?.type === 'beat' && sel.k === i);
     b.classList.toggle('is-done', sel?.type === 'beat' && i < sel.k);
   }
+  applyOverviewHighlights();
+}
+
+// System Overview: the selected item is 'active' (gold); everything related to it is 'linked'; the rest dims.
+function applyOverviewHighlights() {
+  const { sel } = state;
+  const root = $('#overview-view');
+  const [collectCol, , actCol] = OVERVIEW_COLUMNS;
+  let hz = null, src = null, stg = null;
+  if (sel?.type === 'hazard') {
+    hz = [sel.k];
+    src = Object.keys(hazardBy[sel.k].sources);
+    stg = STAGES.map(s => s.k); // every hazard runs the whole loop
+  } else if (sel?.type === 'asset') {
+    hz = hazardsForAsset(sel.k).map(h => h.k);
+    src = [sel.k];
+    stg = sel.k === 'government' ? actCol.stages : collectCol.stages;
+  } else if (sel?.type === 'stage') {
+    hz = HAZARDS.map(h => h.k); // every stage serves every hazard
+    stg = [sel.k];
+    src = collectCol.stages.includes(sel.k) ? SENSING_ASSETS : actCol.stages.includes(sel.k) ? ['government'] : [];
+  }
+  root.classList.toggle('has-sel', !!hz);
+  const mark = (el, active, linked) => {
+    el.classList.toggle('is-active', active);
+    el.classList.toggle('is-linked', !active && linked);
+  };
+  for (const el of $$('[data-hazard]', root)) mark(el, sel?.type === 'hazard' && sel.k === el.dataset.hazard, !!hz?.includes(el.dataset.hazard));
+  for (const el of $$('[data-source]:not(.ov-cell)', root)) mark(el, sel?.type === 'asset' && sel.k === el.dataset.source, !!src?.includes(el.dataset.source));
+  for (const el of $$('[data-stage]', root)) mark(el, sel?.type === 'stage' && sel.k === el.dataset.stage, !!stg?.includes(el.dataset.stage));
+  for (const row of $$('[data-hazard-row]', root)) {
+    const on = !!hz?.includes(row.dataset.hazardRow);
+    row.classList.toggle('is-linked', on && sel?.type !== 'stage');
+    for (const c of $$('.ov-cell', row)) c.classList.toggle('is-hit', on && !!src?.includes(c.dataset.source));
+  }
 }
 
 // ---------- panel ----------
@@ -186,6 +227,14 @@ function renderPanel() {
     det.dataset.k = detHtml ? sel.k : '';
     det.classList.toggle('is-open', !!detHtml);
   }
+  const ovd = $('#ov-detail');
+  const ovKey = sel ? `${sel.type}:${sel.k}` : '';
+  if (ovd.dataset.k !== ovKey) {
+    const ovHtml = overviewDetail(sel);
+    ovd.innerHTML = ovHtml;
+    ovd.dataset.k = ovKey;
+    ovd.classList.toggle('is-open', !!ovHtml);
+  }
   let html = '';
   if (sel?.type === 'basin') html = V.basinPanel(BASIN, ZONE_PROPS);
   else if (sel?.type === 'zone') html = V.zonePanel(sel.k, ZONE_PROPS, BASIN);
@@ -194,6 +243,7 @@ function renderPanel() {
   else if (sel?.type === 'hub') html = V.hubPanel(assetMarkers.filter(a => ASSET_ROLE[a.a].sends).length, assetMarkers.filter(a => ASSET_ROLE[a.a].receives).length);
   else if (sel?.type === 'space') html = V.spacePanel(tle.fetched);
   else if (sel?.type === 'beat') html = V.beatPanel(sel.k, SCENARIO);
+  else if (sel?.type === 'hazard') html = V.hazardPanel(sel.k);
   if (html) {
     panel.classList.remove('is-swap');
     void panel.offsetWidth;
@@ -233,13 +283,15 @@ function setViewDom(v) {
   state.view = v;
   app.dataset.view = v;
   for (const t of $$('.tabs [data-view]')) {
-    t.setAttribute('aria-selected', t.dataset.view === v);
-    t.tabIndex = t.dataset.view === v ? 0 : -1;
+    t.setAttribute('aria-selected', t.dataset.view === tabFor(v));
+    t.tabIndex = t.dataset.view === tabFor(v) ? 0 : -1;
   }
   moveInk();
 }
+// The flooding example ('scenario' view) runs on the map, so the Mission Map tab stays selected.
+const tabFor = v => (v === 'scenario' ? 'globe' : v);
 function moveInk() {
-  const t = $(`.tabs [data-view="${state.view}"]`), ink = $('.tabs-ink');
+  const t = $(`.tabs [data-view="${tabFor(state.view)}"]`), ink = $('.tabs-ink');
   if (t) Object.assign(ink.style, { width: `${t.offsetWidth}px`, transform: `translateX(${t.offsetLeft - 4}px)` });
 }
 window.addEventListener('resize', moveInk);
@@ -346,15 +398,17 @@ const PRESET = {
   process:  { dataflow: true, sats: false, weather: false },
   scenario: { dataflow: false, sats: false, weather: false },
 };
+const showOverview = () => { select(null, { fly: false }); setView('overview'); };
 // A tour step records what it shows (sel / view) so free clicks can be mapped back onto the tour.
 const globeStep = (ch, preset, sel) => ({ ch, preset, sel, run: () => { setView('globe'); select(sel); } });
 const TOUR = [
   { ch: 'Intro', run: showIntro },
+  { ch: 'System Overview', preset: 'base', view: 'overview', run: showOverview },
   globeStep('The Basin', 'base', { type: 'basin' }),
   ...ZONES.map(z => globeStep('Focus Zones', 'base', { type: 'zone', k: z.k })),
   globeStep('Space Segment', 'space', { type: 'space' }),
   ...STAGES.map(s => globeStep('The Process', 'process', { type: 'stage', k: s.k })),
-  ...SCENARIO.beats.map((b, i) => ({ ch: 'Flood Scenario', preset: 'scenario', sel: { type: 'beat', k: i }, run: () => enterBeat(i) })),
+  ...SCENARIO.beats.map((b, i) => ({ ch: 'Example: Flooding', preset: 'scenario', sel: { type: 'beat', k: i }, run: () => enterBeat(i) })),
   { ch: 'Process & Gaps', view: 'process', run: () => { select(null, { fly: false }); setView('process'); } },
 ];
 const CHAPTERS = [...new Set(TOUR.map(t => t.ch))];
@@ -365,11 +419,7 @@ function go(i) {
   state.tour = i;
   const step = TOUR[i];
   if (step.preset && step.ch !== prevCh) for (const [k, v] of Object.entries(PRESET[step.preset])) if (globe.layers[k] !== v) setLayer(k, v);
-  if (i === 1 && !state.started) {
-    setView('globe');
-    hideIntro(true);
-    select({ type: 'basin' }, { fly: false });
-  } else step.run();
+  step.run();
   updateTourUI();
   if (step.ch !== prevCh && i > 0) toast(`${V.pad(CHAPTERS.indexOf(step.ch))}`, step.ch);
 }
@@ -413,15 +463,17 @@ document.addEventListener('click', e => {
       case 'fullscreen': fullscreen(); return;
       case 'sc-play': setPlaying(!state.playing); return;
       case 'sc-exit': setView('globe'); select({ type: 'basin' }); syncTour(); return;
+      case 'example': enterBeat(0); syncTour(); return;
       case 'wx-play': weather.toggle(); app.classList.toggle('wx-paused', !weather.playing); return;
     }
   }
   if (d.view) {
-    if (d.view === 'scenario') { enterBeat(0); syncTour(); return; }
     setView(d.view);
-    if (d.view === 'process' && state.sel?.type !== 'stage') select(null, { fly: false });
+    if (d.view !== 'globe' && !['stage', 'hazard', 'asset'].includes(state.sel?.type)) select(null, { fly: false });
     syncTour(); return;
   }
+  if (d.hazard) { select({ type: 'hazard', k: d.hazard }, { fly: state.view === 'globe' }); return; }
+  if (d.source) { select({ type: 'asset', k: d.source }, { fly: state.view === 'globe' }); return; }
   if (d.beat) { enterBeat(+d.beat); syncTour(); return; }
   if (d.hub) { select({ type: 'hub' }); return; }
   if (d.page) {
@@ -459,10 +511,10 @@ function openAssetInPanel(a) {
   det.classList.remove('is-flash'); void det.offsetWidth; det.classList.add('is-flash');
 }
 
+// "Explore freely" lands on the System Overview, like the first tour step.
 function explore() {
-  state.tour = 1; updateTourUI();
-  select(null, { fly: false });
-  hideIntro();
+  state.tour = TOUR.findIndex(t => t.view === 'overview'); updateTourUI();
+  showOverview();
 }
 let popoverOpener = null;
 function toggle(sel) {
@@ -562,13 +614,14 @@ document.addEventListener('keydown', e => {
     else if (app.classList.contains('is-intro')) explore();
     else if (state.view === 'scenario') { setView('globe'); select({ type: 'basin' }); syncTour(); }
     else if (state.sel) select(null, { fly: false });
-    else if (state.view === 'process') setView('globe');
+    else if (state.view !== 'globe') setView('globe');
   }
   else if (/^[1-9]$/.test(k)) {
     if (state.view === 'scenario') setView('globe');
     select({ type: 'stage', k: STAGES[+k - 1].k }, { fly: state.view === 'globe' }); syncTour();
   }
   else if (lk === 'h') { setView('globe'); select({ type: 'basin' }); syncTour(); }
+  else if (lk === 'o') { setView(state.view === 'overview' ? 'globe' : 'overview'); syncTour(); }
   else if (lk === 'p') { setView(state.view === 'process' ? 'globe' : 'process'); syncTour(); }
   else if (lk === 'k') { if (state.view === 'scenario') setPlaying(!state.playing); else { enterBeat(0); syncTour(); setPlaying(true); } }
   else if (LAYER_KEYS[lk]) setLayer(LAYER_KEYS[lk], !globe.layers[LAYER_KEYS[lk]]);

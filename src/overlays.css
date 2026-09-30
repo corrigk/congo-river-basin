@@ -25,7 +25,7 @@
 .dk input:checked ~ .dk-sw::after { transform: translateX(11px); background: var(--ink); }
 .dk:has(input:focus-visible) { outline: 2px solid var(--gold); }
 .is-intro .dock { opacity: 0; pointer-events: none; transform: translate(-50%, -20px); }
-[data-view="process"] .dock, [data-view="process"] .legend { opacity: 0; pointer-events: none; }
+:is([data-view="process"], [data-view="overview"]) :is(.dock, .legend) { opacity: 0; pointer-events: none; }
 
 /* ---------- legend cards (bottom-left) ---------- */
 .legend {
