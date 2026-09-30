@@ -148,7 +148,7 @@
   .dk { padding: 7px 8px; }
 }
 @media (max-width: 760px) {
-  .dock { top: auto; bottom: calc(var(--gut) + 104px); }
+  .dock { top: calc(var(--top) + 60px); } /* below the tour control, clear of the bottom-sheet panel */
   .legend { display: none; }
   .sc-t { display: none; }
 }

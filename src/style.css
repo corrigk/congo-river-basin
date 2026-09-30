@@ -454,7 +454,7 @@ svg { display: block; }
   .brand-text, .top-right .divider, .top-right [data-act="help"], .top-right [data-act="fullscreen"], .tour-meta .tour-chapter { display: none; }
   .top-right { position: absolute; top: calc(var(--top) + 8px); right: var(--gut); }
   .tabs button { padding: 6px 10px; font-size: 12px; }
-  .panel { left: var(--gut); width: auto; top: auto; bottom: var(--gut); max-height: 58%; transform: translateY(calc(100% + 40px)); }
+  .panel { left: var(--gut); width: auto; top: auto; bottom: var(--gut); max-height: 52%; transform: translateY(calc(100% + 40px)); }
   .has-panel .process-rail { opacity: 0; pointer-events: none; }
   .process-rail { padding: 8px 44px 8px 12px; bottom: var(--gut); }
   .pr-phase { font-size: 8px; letter-spacing: .06em; }
@@ -466,7 +466,8 @@ svg { display: block; }
   .pv-head { flex-direction: column; align-items: flex-start; gap: 10px; }
   .pv-title { font-size: 44px; }
   .pv-table { overflow-x: auto; }
-  .pv-row { min-width: 900px; }
+  .pv-row { min-width: 1240px; } /* wide enough that stage titles wrap between words */
+  .pv-inner { padding-top: 64px; } /* clear the floating tour control */
 }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
@@ -490,7 +491,7 @@ svg { display: block; }
 
 /* Process view: stage detail renders inline as a full-width band instead of the side panel */
 [data-view="process"] .panel { opacity: 0; pointer-events: none; transform: translateX(calc(100% + 40px)); }
-.pv-card-title { overflow-wrap: anywhere; }
+.pv-card-title { overflow-wrap: break-word; hyphens: auto; }
 .pv-detail { display: grid; grid-template-rows: 0fr; transition: grid-template-rows .55s var(--ease), margin .55s var(--ease); margin-left: calc(var(--pv-label) + 8px); }
 .pv-detail > * { overflow: hidden; min-height: 0; }
 .pv-detail.is-open { grid-template-rows: 1fr; margin-top: 22px; }

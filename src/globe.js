@@ -20,6 +20,9 @@ const H_MASK = 60, H_FILL = 120, H_LINE = 400;
 export const MAX_ALT = { zone: 16_000_000, hub: 16_000_000, scenario: 12_000_000, asset: 9_000_000, label: 3_700_000 };
 
 // Title-card camera: Africa seen from deep space, slightly west so the title card has room.
+// Below this canvas width (px) the layout switches to phone mode (matches the 760px CSS breakpoint).
+const PHONE_WIDTH = 760;
+
 const INTRO_VIEW = { lon: -4, lat: 5, height: 21_000_000 };
 
 export const BASIN = basinGeo.features[0].properties;
@@ -244,11 +247,15 @@ export async function createGlobe({ container, creditContainer }) {
   function sphereFor([w, s, e, n]) {
     return C.BoundingSphere.fromRectangle3D(C.Rectangle.fromDegrees(w, s, e, n), C.Ellipsoid.WGS84, 0);
   }
-  // Frame a lon/lat box at an oblique angle; `shift` nudges the target left to clear the side panel.
+  // Frame a lon/lat box at an oblique angle. On wide screens `shift` nudges the target left to clear the
+  // side panel; on phones the panel is a bottom sheet, so the target is nudged up and framed wider instead.
   function flyToBox(box, { pitch = -58, heading = 0, scale = 2.25, duration = 2.4, shift = 0.22, complete } = {}) {
     const [w, s, e, n] = box;
-    const dx = (e - w) * shift;
-    const sphere = sphereFor([w, s - (n - s) * 0.08, e + dx, n]);
+    const phone = scene.canvas.clientWidth < PHONE_WIDTH;
+    const sphere = phone
+      ? sphereFor([w, s - (n - s) * 1.7, e, n])
+      : sphereFor([w, s - (n - s) * 0.08, e + (e - w) * shift, n]);
+    if (phone) scale *= 1.15;
     camera.flyToBoundingSphere(sphere, {
       offset: new C.HeadingPitchRange(DEG(heading), DEG(pitch), Math.max(sphere.radius * scale, 450_000)),
       duration, easingFunction: C.EasingFunction.QUADRATIC_IN_OUT, complete,
