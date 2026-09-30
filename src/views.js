@@ -67,7 +67,7 @@ export function railCaption(sel) {
 
 // ---------- detail panel ----------
 const head = (eyebrow, title, extra = '') => `
-  <button class="p-close icon-btn" data-act="close" title="Close (Esc)">${ICON.close}</button>
+  <button class="p-close icon-btn" data-act="close" title="Close (Esc)" aria-label="Close panel">${ICON.close}</button>
   <div class="p-eyebrow">${eyebrow}</div>
   <h2 class="p-title">${title}</h2>${extra}`;
 
@@ -228,7 +228,7 @@ export function stageDetail(k) {
         <h4 class="p-h">Where it plays out</h4>
         <div class="p-stake">${zones.length ? zones.map(z => `<button class="stake stake-zone" data-zone="${z.k}"><i></i>${esc(z.name)}</button>`).join('') : '<span class="stake">Basin-wide</span>'}</div>
       </div>
-      <button class="p-close icon-btn" data-act="close" title="Close (Esc)">${ICON.close}</button>
+      <button class="p-close icon-btn" data-act="close" title="Close (Esc)" aria-label="Close panel">${ICON.close}</button>
     </div>`;
 }
 
@@ -291,12 +291,12 @@ export function beatPanel(i, sc) {
 
 export function scenarioBar(sc) {
   return `
-    <button class="sc-play icon-btn" data-act="sc-play" title="Play / pause (K)"><span class="i-play">${ICON.play}</span><span class="i-pause">${ICON.pause}</span></button>
+    <button class="sc-play icon-btn" data-act="sc-play" title="Play / pause (K)" aria-label="Play or pause the example"><span class="i-play">${ICON.play}</span><span class="i-pause">${ICON.pause}</span></button>
     <div class="sc-track">
       ${sc.beats.map((b, i) => `<button class="sc-beat" data-beat="${i}" title="${esc(b.title)}"><span class="sc-dot"><b>${stageBy[b.stage].n}</b></span><span class="sc-t">${b.t}</span></button>`).join('')}
       <div class="sc-line"><i id="sc-fill"></i></div>
     </div>
-    <button class="icon-btn" data-act="sc-exit" title="Exit scenario">${ICON.close}</button>`;
+    <button class="icon-btn" data-act="sc-exit" title="Exit example" aria-label="Exit example">${ICON.close}</button>`;
 }
 
 // ---------- overlay dock + legend cards ----------
@@ -325,7 +325,7 @@ export function legendSats() {
 }
 export function legendWeather(w) {
   return `<div class="lg-card" data-card="weather">
-    <div class="lg-h">Weather <button class="lg-btn" data-act="wx-play" title="Play / pause rain loop"><span class="i-play">${ICON.play}</span><span class="i-pause">${ICON.pause}</span></button></div>
+    <div class="lg-h">Weather <button class="lg-btn" data-act="wx-play" title="Play / pause rain loop" aria-label="Play or pause the rain loop"><span class="i-play">${ICON.play}</span><span class="i-pause">${ICON.pause}</span></button></div>
     <div class="lg-row"><span class="wx-k">Clouds</span>VIIRS true colour · ${w.cloudDay}</div>
     <div class="lg-row"><span class="wx-k">Rain</span>GPM IMERG · <b id="wx-time"></b></div>
     <div class="wx-ramp"><i></i><span>Light</span><span>Heavy</span></div></div>`;
@@ -362,6 +362,6 @@ export function helpView() {
     ['L', 'Layers'], ['F', 'Fullscreen'], ['Esc', 'Close / free explore'],
     ['Drag · Scroll', 'Rotate · zoom the globe'], ['Ctrl + drag', 'Tilt the camera'],
   ];
-  return `<div class="help-head"><span>Keyboard &amp; mouse</span><button class="icon-btn" data-act="help">${ICON.close}</button></div>
+  return `<div class="help-head"><span>Keyboard &amp; mouse</span><button class="icon-btn" data-act="help" aria-label="Close shortcuts">${ICON.close}</button></div>
     <dl>${rows.map(([k, v]) => `<dt>${k.split(' &nbsp;').map(x => `<kbd>${x}</kbd>`).join('')}</dt><dd>${v}</dd>`).join('')}</dl>`;
 }

@@ -10,7 +10,7 @@
 </head>
 <body>
   <div id="app" class="is-intro">
-    <div id="globe"></div>
+    <div id="globe" role="tabpanel" aria-labelledby="tab-globe"></div>
     <div id="markers"></div>
     <div class="vignette"></div>
 
@@ -24,9 +24,9 @@
       </div>
       <nav class="tabs" role="tablist" aria-label="View">
         <span class="tabs-ink"></span>
-        <button role="tab" data-view="globe" aria-selected="true">Basin Globe</button>
-        <button role="tab" data-view="scenario" aria-selected="false">Flood Scenario</button>
-        <button role="tab" data-view="process" aria-selected="false">Process &amp; Gaps</button>
+        <button role="tab" id="tab-globe" data-view="globe" aria-selected="true" aria-controls="globe">Basin Globe</button>
+        <button role="tab" id="tab-scenario" data-view="scenario" aria-selected="false" aria-controls="globe" tabindex="-1">Flood Scenario</button>
+        <button role="tab" id="tab-process" data-view="process" aria-selected="false" aria-controls="process-view" tabindex="-1">Process &amp; Gaps</button>
       </nav>
       <div class="top-right">
         <div class="tour" aria-label="Presenter tour">
@@ -44,8 +44,9 @@
     </header>
 
     <aside class="zones-rail glass" id="zones-rail" aria-label="Focus zones"></aside>
-    <aside class="panel glass" id="panel" aria-live="polite"></aside>
-    <div class="layers-pop glass" id="layers-pop" hidden></div>
+    <aside class="panel glass" id="panel" aria-label="Details"></aside>
+    <div class="sr-only" id="announce" aria-live="polite"></div>
+    <div class="layers-pop glass" id="layers-pop" role="dialog" aria-label="Map layers" hidden></div>
     <footer class="process-rail glass" id="process-rail" aria-label="Nine-stage process"></footer>
     <footer class="scenario-bar glass" id="scenario-bar" aria-label="Scenario timeline"></footer>
     <div class="dock glass" id="dock" aria-label="Overlays"></div>
@@ -54,7 +55,7 @@
     <div class="toast" id="toast"></div>
     <div class="hover-tip" id="hover-tip"></div>
 
-    <section class="process-view" id="process-view" aria-label="Process and gaps"></section>
+    <section class="process-view" id="process-view" role="tabpanel" aria-labelledby="tab-process"></section>
 
     <section class="intro" id="intro">
       <div class="intro-inner">
@@ -70,7 +71,7 @@
       </div>
     </section>
 
-    <div class="help glass" id="help" hidden></div>
+    <div class="help glass" id="help" role="dialog" aria-label="Keyboard and mouse shortcuts" hidden></div>
     <div id="credits"></div>
   </div>
   <script type="module" src="/src/main.js"></script>

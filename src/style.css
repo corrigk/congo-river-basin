@@ -26,7 +26,7 @@
 
   --text: var(--paper);
   --muted: rgba(245, 242, 234, 0.66);
-  --faint: rgba(245, 242, 234, 0.4);
+  --faint: rgba(245, 242, 234, 0.55); /* 55% keeps small labels at >= 4.5:1 contrast on the dark glass */
   --line: rgba(245, 242, 234, 0.09);
   --line-2: rgba(245, 242, 234, 0.16);
   --glass: rgba(12, 13, 15, 0.7);
@@ -43,6 +43,7 @@
 }
 
 * { box-sizing: border-box; }
+.sr-only { position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
 html, body { margin: 0; height: 100%; background: #000; color: var(--text); font-family: var(--body); overflow: hidden; }
 body { -webkit-font-smoothing: antialiased; font-size: 14px; line-height: 1.5; }
 button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; }
@@ -450,7 +451,7 @@ svg { display: block; }
   :root { --top: 56px; --gut: 12px; }
   .topbar { grid-template-columns: auto 1fr; }
   .tabs { justify-self: end; }
-  .brand-text, .top-right .divider, [data-act="help"], [data-act="fullscreen"], .tour-meta .tour-chapter { display: none; }
+  .brand-text, .top-right .divider, .top-right [data-act="help"], .top-right [data-act="fullscreen"], .tour-meta .tour-chapter { display: none; }
   .top-right { position: absolute; top: calc(var(--top) + 8px); right: var(--gut); }
   .tabs button { padding: 6px 10px; font-size: 12px; }
   .panel { left: var(--gut); width: auto; top: auto; bottom: var(--gut); max-height: 58%; transform: translateY(calc(100% + 40px)); }

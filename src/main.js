@@ -20,7 +20,10 @@ const app = $('#app');
 // ---------- static chrome ----------
 $('#brand-mark').innerHTML = MARK;
 const ACT_ICON = { prev: 'prev', next: 'next', home: 'home', layers: 'layers', fullscreen: 'expand', help: 'help' };
-for (const b of $$('.topbar [data-act]')) b.innerHTML = ICON[ACT_ICON[b.dataset.act]];
+for (const b of $$('.topbar [data-act]')) {
+  b.innerHTML = ICON[ACT_ICON[b.dataset.act]];
+  b.setAttribute('aria-label', b.title.replace(/ \(.*\)$/, '')); // "Basin overview (H)" -> "Basin overview"
+}
 $('.btn-play').innerHTML = ICON.play;
 $('#zones-rail').innerHTML = V.zonesRail(ZONE_PROPS);
 $('#process-rail').innerHTML = V.processRail();
@@ -197,6 +200,7 @@ function renderPanel() {
     panel.innerHTML = `<div class="p-inner">${html}</div>`;
     panel.classList.add('is-open', 'is-swap');
     panel.scrollTop = 0;
+    $('#announce').textContent = $('.p-title', panel)?.textContent || '';
     renderSats();
   } else {
     panel.classList.remove('is-open');
@@ -228,7 +232,10 @@ function setView(v) {
 function setViewDom(v) {
   state.view = v;
   app.dataset.view = v;
-  for (const t of $$('.tabs [data-view]')) t.setAttribute('aria-selected', t.dataset.view === v);
+  for (const t of $$('.tabs [data-view]')) {
+    t.setAttribute('aria-selected', t.dataset.view === v);
+    t.tabIndex = t.dataset.view === v ? 0 : -1;
+  }
   moveInk();
 }
 function moveInk() {
@@ -457,10 +464,13 @@ function explore() {
   select(null, { fly: false });
   hideIntro();
 }
+let popoverOpener = null;
 function toggle(sel) {
   const n = $(sel);
   n.hidden = !n.hidden;
   if (sel === '#layers-pop' && !n.hidden) n.innerHTML = V.layersPop(globe.layers);
+  if (!n.hidden) { popoverOpener = document.activeElement; $('button, input', n)?.focus(); }
+  else popoverOpener?.focus?.();
 }
 function fullscreen() {
   if (document.fullscreenElement) document.exitFullscreen();
@@ -536,6 +546,14 @@ const LAYER_KEYS = { d: 'dataflow', s: 'sats', w: 'weather', r: 'flow', g: 'cove
 document.addEventListener('keydown', e => {
   if (e.target.closest('input, textarea') || e.metaKey || e.ctrlKey || e.altKey) return;
   const k = e.key, lk = k.toLowerCase();
+  const onControl = e.target.closest('button, summary, label, a, [role="tab"]');
+  if ((k === ' ' || k === 'Enter') && onControl) return; // let the focused control handle it
+  if ((k === 'ArrowRight' || k === 'ArrowLeft') && e.target.closest('[role="tab"]')) {
+    e.preventDefault();
+    const tabs = $$('.tabs [role="tab"]'), i = tabs.indexOf(e.target.closest('[role="tab"]'));
+    tabs[(i + (k === 'ArrowRight' ? 1 : -1) + tabs.length) % tabs.length].focus();
+    return;
+  }
   if (k === 'ArrowRight' || k === 'PageDown' || k === ' ') { e.preventDefault(); go(state.tour + 1); }
   else if (k === 'ArrowLeft' || k === 'PageUp') { e.preventDefault(); go(state.tour - 1); }
   else if (k === 'Escape') {
